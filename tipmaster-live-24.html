@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TipMaster Pro – Analyse</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;900&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{--green:#00e676;--red:#ff1744;--gold:#ffd600;--blue:#64b5f6;--purple:#ce93d8;--orange:#ff8a65;--dark:#0a0f0a;--dark2:#111811;--dark3:#1a221a;--dark4:#222e22;--border:#2a3a2a;--text:#e8f5e9;--muted:#6a8f6a;}
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:var(--dark);color:var(--text);font-family:'Barlow',sans-serif;min-height:100vh;}
+  header{background:linear-gradient(135deg,#0d1a0d,#0a1a00);border-bottom:2px solid var(--green);padding:0 20px;position:sticky;top:0;z-index:100;box-shadow:0 4px 30px rgba(0,230,118,.15);}
+  .header-inner{max-width:900px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;height:60px;}
+  .logo{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:26px;letter-spacing:1px;color:var(--green);text-transform:uppercase;display:flex;align-items:center;gap:8px;}
+  .logo span{color:var(--gold);}
+  .live-badge{background:rgba(255,214,0,.12);border:1px solid var(--gold);color:var(--gold);font-size:11px;font-weight:700;letter-spacing:1px;padding:4px 10px;border-radius:20px;text-transform:uppercase;}
+  main{max-width:900px;margin:0 auto;padding:20px 16px 60px;}
+  .stats-bar{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:20px;}
+  .stat-box{background:var(--dark2);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center;}
+  .stat-box-val{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:24px;color:var(--green);line-height:1;margin-bottom:3px;}
+  .stat-box-val.gold{color:var(--gold);}
+  .stat-box-val.red{color:var(--red);}
+  .stat-box-label{font-size:9px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--muted);}
+  .section-title{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:13px;letter-spacing:3px;text-transform:uppercase;color:var(--muted);margin-bottom:12px;display:flex;align-items:center;gap:8px;}
+  .section-title::after{content:'';flex:1;height:1px;background:var(--border);}
+  .filter-bar{background:var(--dark2);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:20px;display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;}
+  .filter-group{display:flex;flex-direction:column;gap:5px;flex:1;min-width:120px;}
+  .filter-label{font-size:10px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);}
+  .filter-select{background:var(--dark3);border:1px solid var(--border);color:var(--text);font-family:'Barlow',sans-serif;font-size:13px;padding:8px 28px 8px 10px;border-radius:7px;cursor:pointer;outline:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236a8f6a' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;}
+  .toggle-row{display:flex;gap:6px;flex-wrap:wrap;}
+  .ftoggle{background:var(--dark3);border:1px solid var(--border);color:var(--muted);font-family:'Barlow',sans-serif;font-size:12px;font-weight:600;padding:7px 11px;border-radius:20px;cursor:pointer;transition:all .2s;white-space:nowrap;}
+  .ftoggle.active{border-color:var(--green);color:var(--green);background:rgba(0,230,118,.12);}
+  .ftoggle .cnt{background:var(--dark4);border-radius:10px;padding:1px 6px;font-size:10px;margin-left:3px;}
+  .ftoggle.active .cnt{background:rgba(0,230,118,.2);}
+  .btn-reload{background:rgba(0,230,118,.1);border:1px solid var(--green);color:var(--green);font-family:'Barlow',sans-serif;font-size:13px;font-weight:600;padding:9px 18px;border-radius:8px;cursor:pointer;width:100%;}
+  .btn-reload:disabled{opacity:.4;cursor:not-allowed;}
+  .progress-bar-wrap{height:3px;background:var(--dark4);border-radius:2px;margin-bottom:8px;overflow:hidden;display:none;}
+  .progress-bar-wrap.show{display:block;}
+  .progress-bar{height:100%;background:var(--green);border-radius:2px;transition:width .4s ease;}
+  .load-status{font-size:12px;color:var(--muted);text-align:center;margin-bottom:16px;min-height:16px;}
+  .debug-toggle-btn{font-size:11px;color:var(--muted);text-decoration:underline;cursor:pointer;margin-bottom:10px;display:none;}
+  .debug-panel{background:#0a120a;border:1px solid #1a3a1a;border-radius:10px;padding:12px;margin-bottom:16px;display:none;}
+  .debug-panel.show{display:block;}
+  .debug-log{font-size:11px;color:#4a8a4a;font-family:monospace;line-height:1.7;max-height:140px;overflow-y:auto;}
+  .loading{text-align:center;padding:50px 20px;}
+  .spinner{width:38px;height:38px;border:3px solid var(--border);border-top-color:var(--green);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 14px;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .loading p{color:var(--muted);font-size:14px;}
+
+  /* WARNING BANNER */
+  .warning-banner{background:rgba(255,87,34,.08);border:1px solid rgba(255,87,34,.3);border-radius:10px;padding:12px 14px;margin-bottom:16px;display:flex;align-items:flex-start;gap:10px;}
+  .warning-banner-icon{font-size:18px;flex-shrink:0;}
+  .warning-banner-text{font-size:13px;color:#ffccbc;line-height:1.5;}
+  .warning-banner strong{color:var(--orange);display:block;margin-bottom:2px;}
+
+  /* TOP PICKS */
+  .pick-card{border-radius:12px;padding:14px 16px;margin-bottom:10px;display:flex;align-items:flex-start;gap:12px;border:1px solid;}
+  .pick-card.hot{background:linear-gradient(135deg,#1a1200,#111811);border-color:rgba(255,214,0,.5);}
+  .pick-card.good{background:linear-gradient(135deg,#001a0a,#111811);border-color:rgba(0,230,118,.4);}
+  .pick-card.skip{background:rgba(255,87,34,.05);border-color:rgba(255,87,34,.3);}
+  .pick-num{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:32px;line-height:1;flex-shrink:0;width:28px;opacity:.3;}
+  .pick-body{flex:1;}
+  .pick-type{font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:4px;}
+  .pick-type.hot{color:var(--gold);}
+  .pick-type.good{color:var(--green);}
+  .pick-type.skip{color:var(--orange);}
+  .pick-match{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:16px;margin-bottom:3px;}
+  .pick-tip{font-size:13px;font-weight:600;margin-bottom:4px;}
+  .pick-reason{font-size:12px;color:var(--muted);line-height:1.5;}
+  .pick-right{text-align:right;flex-shrink:0;}
+  .pick-odds{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:26px;color:var(--gold);}
+  .pick-score-label{font-size:11px;color:var(--muted);}
+
+  /* GAME CARDS */
+  .tips-list{display:flex;flex-direction:column;gap:12px;}
+  .tip-card{background:var(--dark2);border:1px solid var(--border);border-radius:14px;overflow:hidden;transition:border-color .25s,transform .2s;cursor:pointer;animation:slideIn .35s ease both;}
+  @keyframes slideIn{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
+  .tip-card:hover{border-color:rgba(0,230,118,.4);transform:translateY(-2px);}
+  .tip-card.expanded{border-color:var(--green);}
+  .tip-card.danger{border-color:rgba(255,87,34,.3);}
+  .score-bar{height:3px;}
+  .tip-card-header{padding:14px 16px;display:grid;grid-template-columns:1fr auto;gap:12px;align-items:start;}
+  .tip-meta{display:flex;flex-direction:column;gap:4px;}
+  .tip-match{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:16px;line-height:1.15;}
+  .tip-sub{display:flex;gap:6px;flex-wrap:wrap;align-items:center;}
+  .tip-league{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;}
+  .tip-time{font-size:11px;color:var(--muted);}
+  .badge-today{font-size:10px;font-weight:700;background:rgba(0,230,118,.15);color:var(--green);padding:2px 7px;border-radius:10px;}
+  .badge-tomorrow{font-size:10px;font-weight:700;background:rgba(255,214,0,.12);color:var(--gold);padding:2px 7px;border-radius:10px;}
+  .badge-danger{font-size:10px;font-weight:700;background:rgba(255,87,34,.15);color:var(--orange);padding:2px 7px;border-radius:10px;}
+  .tags-row{display:flex;flex-wrap:wrap;gap:4px;margin-top:3px;}
+  .tag{font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;}
+  .tag-hot{background:rgba(255,214,0,.12);color:var(--gold);border:1px solid rgba(255,214,0,.2);}
+  .tag-good{background:rgba(0,230,118,.1);color:var(--green);border:1px solid rgba(0,230,118,.2);}
+  .tag-neutral{background:rgba(100,181,246,.1);color:var(--blue);border:1px solid rgba(100,181,246,.2);}
+  .tag-warn{background:rgba(255,87,34,.1);color:var(--orange);border:1px solid rgba(255,87,34,.2);}
+  .tip-right{display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0;}
+  .score-badge{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:13px;padding:3px 9px;border-radius:6px;}
+  .score-hot{background:rgba(255,214,0,.15);color:var(--gold);}
+  .score-good{background:rgba(0,230,118,.12);color:var(--green);}
+  .score-cool{background:rgba(100,181,246,.1);color:var(--blue);}
+  .score-skip{background:rgba(255,87,34,.1);color:var(--orange);}
+  .tip-odds-main{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:22px;color:var(--gold);line-height:1;}
+  .tip-expand{border-top:1px solid var(--border);background:var(--dark3);max-height:0;overflow:hidden;transition:max-height .4s ease,padding .2s;}
+  .tip-card.expanded .tip-expand{max-height:800px;padding:16px;}
+  .exp-section{margin-bottom:14px;}
+  .exp-title{font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:8px;}
+  .signal-row{background:var(--dark4);border-radius:8px;padding:10px 12px;margin-bottom:6px;display:flex;gap:10px;align-items:flex-start;}
+  .signal-icon{font-size:16px;flex-shrink:0;}
+  .signal-body{flex:1;}
+  .signal-name{font-size:12px;font-weight:700;margin-bottom:2px;}
+  .signal-desc{font-size:12px;color:var(--muted);line-height:1.5;}
+  .signal-str{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:14px;flex-shrink:0;}
+  .str-h{color:var(--gold);}
+  .str-m{color:var(--green);}
+  .str-l{color:var(--muted);}
+  .str-w{color:var(--orange);}
+  .odds-row{display:flex;gap:8px;margin-bottom:10px;}
+  .odds-box{background:var(--dark4);border:1px solid var(--border);border-radius:8px;padding:10px;text-align:center;flex:1;}
+  .odds-box.best{border-color:var(--green);}
+  .odds-box.consensus{border-color:var(--gold);}
+  .odds-lbl{font-size:10px;color:var(--muted);margin-bottom:3px;}
+  .odds-val{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:19px;color:var(--gold);}
+  .odds-prob{font-size:11px;color:var(--muted);}
+  .consensus-bar{margin-bottom:12px;}
+  .consensus-title{font-size:11px;color:var(--muted);margin-bottom:6px;}
+  .bm-row{display:flex;justify-content:space-between;align-items:center;font-size:12px;padding:3px 0;}
+  .bm-name{color:var(--muted);}
+  .bm-odds{font-weight:600;}
+  .bm-arrow{font-size:10px;}
+  .rec-box{background:rgba(0,230,118,.07);border:1px solid rgba(0,230,118,.25);border-radius:10px;padding:12px 14px;display:flex;align-items:center;gap:12px;}
+  .rec-tip{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:16px;color:var(--green);flex:1;}
+  .rec-tip.skip{color:var(--orange);}
+  .rec-odds{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:26px;color:var(--gold);}
+  .rec-sub{font-size:12px;color:var(--muted);}
+  .empty-state{text-align:center;padding:50px 20px;color:var(--muted);}
+  .disclaimer{margin-top:28px;padding:12px 16px;background:rgba(255,23,68,.06);border:1px solid rgba(255,23,68,.2);border-radius:8px;font-size:11px;color:#e57373;line-height:1.5;text-align:center;}
+</style>
+</head>
+<body>
+<header>
+  <div class="header-inner">
+    <div class="logo">⚽ Tip<span>Master</span> Pro</div>
+    <div class="live-badge">🔍 Smart Analyse</div>
+  </div>
+</header>
+<main>
+  <div class="stats-bar">
+    <div class="stat-box"><div class="stat-box-val" id="stat-total">–</div><div class="stat-box-label">Spiele</div></div>
+    <div class="stat-box"><div class="stat-box-val gold" id="stat-hot">–</div><div class="stat-box-label">🔥 Top Picks</div></div>
+    <div class="stat-box"><div class="stat-box-val red" id="stat-danger">–</div><div class="stat-box-label">⚠️ Vorsicht</div></div>
+    <div class="stat-box"><div class="stat-box-val" id="stat-consensus">–</div><div class="stat-box-label">🤝 Konsens</div></div>
+  </div>
+
+  <div class="section-title">Filter</div>
+  <div class="filter-bar">
+    <div class="filter-group">
+      <div class="filter-label">Liga</div>
+      <select class="filter-select" id="filter-league" onchange="applyFilters()"><option value="all">Alle Ligen</option></select>
+    </div>
+    <div class="filter-group">
+      <div class="filter-label">Zeitraum</div>
+      <select class="filter-select" id="filter-when" onchange="applyFilters()">
+        <option value="all">Alle anstehenden</option>
+        <option value="today">Heute</option>
+        <option value="tomorrow">Morgen</option>
+        <option value="weekend">Wochenende</option>
+        <option value="week">Diese Woche</option>
+      </select>
+    </div>
+    <div style="flex-basis:100%">
+      <div class="filter-label" style="margin-bottom:6px">Analyse-Filter</div>
+      <div class="toggle-row">
+        <button class="ftoggle active" onclick="setFilter(this,'all')">Alle <span class="cnt" id="cnt-all">0</span></button>
+        <button class="ftoggle" onclick="setFilter(this,'hot')">🔥 Top Picks <span class="cnt" id="cnt-hot">0</span></button>
+        <button class="ftoggle" onclick="setFilter(this,'consensus')">🤝 Konsens <span class="cnt" id="cnt-consensus">0</span></button>
+        <button class="ftoggle" onclick="setFilter(this,'upset')">⚡ Außenseiter <span class="cnt" id="cnt-upset">0</span></button>
+        <button class="ftoggle" onclick="setFilter(this,'skip')">⚠️ Vorsicht <span class="cnt" id="cnt-skip">0</span></button>
+      </div>
+    </div>
+    <button class="btn-reload" id="btn-reload" onclick="loadData()">🔄 Neu laden</button>
+  </div>
+
+  <div class="progress-bar-wrap" id="progress-wrap"><div class="progress-bar" id="progress-bar" style="width:0%"></div></div>
+  <div class="load-status" id="load-status"></div>
+  <div class="debug-toggle-btn" id="debug-btn" onclick="document.getElementById('debug-panel').classList.toggle('show')">🔧 Debug</div>
+  <div class="debug-panel" id="debug-panel"><div class="debug-log" id="debug-log"></div></div>
+
+  <div id="top-picks-wrap" style="display:none">
+    <div class="section-title">🔥 Top Picks</div>
+    <div id="top-picks"></div>
+  </div>
+
+  <div id="warnings-wrap" style="display:none">
+    <div class="section-title">⚠️ Vorsicht bei diesen Spielen</div>
+    <div id="warnings-list"></div>
+  </div>
+
+  <div class="section-title">Alle Spiele – nach Analyse-Score</div>
+  <div id="content"><div class="loading"><div class="spinner"></div><p>Lade & analysiere…</p></div></div>
+  <div class="disclaimer">⚠️ Analyse basiert auf Quoten-Mathematik & Kontext-Signalen. Kein Tipp garantiert. Hilfe: <strong>bzga.de</strong></div>
+</main>
+
+<script>
+const ODDS_KEY='fdd253aa73b4a938b3f9746867696e87';
+const LEAGUES=[
+  {key:'soccer_germany_bundesliga',   label:'Bundesliga'},
+  {key:'soccer_epl',                  label:'Premier League'},
+  {key:'soccer_spain_la_liga',        label:'La Liga'},
+  {key:'soccer_italy_serie_a',        label:'Serie A'},
+  {key:'soccer_france_ligue_one',     label:'Ligue 1'},
+  {key:'soccer_uefa_champs_league',   label:'Champions League'},
+  {key:'soccer_uefa_europa_league',   label:'Europa League'},
+  {key:'soccer_uefa_europa_conference_league',label:'Conference League'},
+];
+// Corsfix: free for github.io - reliable with 60rpm limit
+const PROXIES = [
+  u => `https://proxy.corsfix.com/?${encodeURIComponent(u)}`,
+  u => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
+  u => `https://corsproxy.io/?url=${encodeURIComponent(u)}`,
+];
+
+let allGames=[], activeFilter='all', debugLines=[];
+
+function log(m){debugLines.push(m);document.getElementById('debug-log').innerHTML=debugLines.map(l=>`<div>${l}</div>`).join('');document.getElementById('debug-btn').style.display='block';}
+function setProgress(p){document.getElementById('progress-bar').style.width=p+'%';}
+function setStatus(t){
+  document.getElementById('load-status').textContent=t;
+  const msg=document.getElementById('load-msg');
+  const sub=document.getElementById('load-sub');
+  if(msg) msg.textContent=t||'Analysiere…';
+  if(sub&&t) sub.textContent=`Liga ${Math.round(parseFloat(document.getElementById('progress-bar').style.width)||0)}% geladen`;
+}
+function isToday(d){return d.toDateString()===new Date().toDateString();}
+function isTomorrow(d){const t=new Date();t.setDate(t.getDate()+1);return d.toDateString()===t.toDateString();}
+function oddsToProb(o){return o>1?1/o:0;}
+
+async function fetchURL(url,label){
+  for(let i=0;i<PROXIES.length;i++){
+    try{
+      const ctrl=new AbortController();
+      const t=setTimeout(()=>ctrl.abort(),5000);
+      const res=await fetch(PROXIES[i](url),{signal:ctrl.signal});
+      clearTimeout(t);
+      if(!res.ok) continue;
+      const json=await res.json();
+      if(Array.isArray(json)){log(`✅ ${label}: ${json.length}`);return json;}
+      if(json?.message){log(`⚠️ ${label}: ${json.message}`);return null;}
+    }catch(e){/* try next */}
+  }
+  log(`✗ ${label}`);return null;
+}
+
+// ═══════════════════════════════════════════════
+// KONTEXT-ERKENNUNG
+// Erkennt Saisonphase, Druck-Situationen etc.
+// ═══════════════════════════════════════════════
+function detectContext(game, leagueKey, gameDate){
+  const warnings=[];
+  const boosts=[];
+  const now=new Date();
+  const month=gameDate.getMonth()+1; // 1-12
+  const day=gameDate.getDate();
+
+  // SAISONENDE-ERKENNUNG (Mai = letzter Spieltag der meisten Ligen)
+  const isSeasonEnd=(month===5&&day>=15)||(month===6);
+  const isSeasonStart=(month===8)||(month===7&&day>20);
+
+  // EUROPACUP FINALE/K.O. hat Vorrang vor Saisonende
+  const isEuroKO=leagueKey.includes('europa')||leagueKey.includes('champs');
+  if(isEuroKO&&isSeasonEnd){
+    // K.O.-Spiel überschreibt Saisonende-Warnung
+    boosts.push({
+      icon:'🏆',
+      name:'Europacup Finale / K.O.-Phase',
+      desc:'Champions League / Europa League Finale oder K.O.-Spiel: Maximale Motivation beider Teams, alles oder nichts. Sehr verlässliche Wetten möglich.',
+      type:'final'
+    });
+  } else if(isSeasonEnd){
+    warnings.push({
+      icon:'📅',
+      name:'Saisonende – Ligaspiel',
+      desc:'Mai/Juni Ligaspiel: Teams mit gesichertem Platz spielen oft mit Rotation. Weniger verlässlich als Europacup-Spiele.',
+      severity:'high'
+    });
+  }
+
+  // WOCHENTAG-KONTEXT
+  const weekday=gameDate.getDay();
+  if(weekday===2||weekday===3){ // Di/Mi = Europacup
+    if(leagueKey.includes('europa')||leagueKey.includes('champs')){
+      boosts.push({
+        icon:'⭐',
+        name:'Europacup-Tag',
+        desc:'Dienstag/Mittwoch Europacup: Teams sind maximal motiviert und voll konzentriert.',
+        type:'positive'
+      });
+    }
+  }
+
+  return{warnings, boosts, isSeasonEnd, isEuroFinal};
+}
+
+// ═══════════════════════════════════════════════
+// BUCHMACHER-KONSENS ANALYSE
+// Vergleicht alle verfügbaren Buchmacher
+// ═══════════════════════════════════════════════
+function analyzeConsensus(bookmakers, homeName, awayName){
+  if(!bookmakers||bookmakers.length<2) return null;
+
+  const homeOdds=[], awayOdds=[], drawOdds=[];
+  const bmDetails=[];
+
+  bookmakers.forEach(bm=>{
+    const mkt=bm.markets?.find(m=>m.key==='h2h');
+    if(!mkt) return;
+    const h=mkt.outcomes.find(o=>o.name===homeName);
+    const a=mkt.outcomes.find(o=>o.name===awayName);
+    const d=mkt.outcomes.find(o=>o.name==='Draw');
+    if(!h||!a) return;
+    homeOdds.push(h.price);
+    awayOdds.push(a.price);
+    if(d) drawOdds.push(d.price);
+    bmDetails.push({name:bm.title,home:h.price,away:a.price,draw:d?.price});
+  });
+
+  if(homeOdds.length<2) return null;
+
+  const avg=arr=>arr.reduce((a,b)=>a+b,0)/arr.length;
+  const spread=arr=>Math.max(...arr)-Math.min(...arr);
+
+  const homeSpread=spread(homeOdds);
+  const awaySpread=spread(awayOdds);
+  const maxSpread=Math.max(homeSpread,awaySpread);
+
+  const avgHome=avg(homeOdds);
+  const avgAway=avg(awayOdds);
+  const avgDraw=drawOdds.length?avg(drawOdds):null;
+
+  // Konsens = alle Buchmacher sind sich einig (spread niedrig)
+  const isConsensus=maxSpread<0.20;
+  // Uneinigkeit = große Spread = Unsicherheit im Markt
+  const isUncertain=maxSpread>0.50;
+
+  // Favorit laut Konsens
+  const rH=oddsToProb(avgHome), rD=avgDraw?oddsToProb(avgDraw):0, rA=oddsToProb(avgAway);
+  const tot=rH+rD+rA;
+
+  return{
+    isConsensus, isUncertain, maxSpread:maxSpread.toFixed(2),
+    avgHome, avgAway, avgDraw,
+    pHome:Math.round(rH/tot*100), pDraw:Math.round(rD/tot*100), pAway:Math.round(rA/tot*100),
+    bmCount:homeOdds.length, bmDetails:bmDetails.slice(0,4),
+    // Best odds across all bookmakers
+    bestHome:Math.max(...homeOdds), bestAway:Math.max(...awayOdds),
+  };
+}
+
+// ═══════════════════════════════════════════════
+// HAUPT-ANALYSE ENGINE
+// ═══════════════════════════════════════════════
+function analyzeGame(game, leagueLabel, leagueKey, totalsGame){
+  const bookmakers=game.bookmakers||[];
+  const bm=bookmakers[0];
+  if(!bm) return null;
+  const h2h=bm.markets?.find(m=>m.key==='h2h');
+  if(!h2h) return null;
+
+  const homeOut=h2h.outcomes.find(o=>o.name===game.home_team);
+  const awayOut=h2h.outcomes.find(o=>o.name===game.away_team);
+  const drawOut=h2h.outcomes.find(o=>o.name==='Draw');
+  if(!homeOut||!awayOut) return null;
+
+  const rH=oddsToProb(homeOut.price), rD=drawOut?oddsToProb(drawOut.price):0, rA=oddsToProb(awayOut.price);
+  const tot=rH+rD+rA; if(tot===0) return null;
+  const pH=rH/tot, pD=rD/tot, pA=rA/tot;
+  const vigPct=Math.round((tot-1)*100);
+
+  const d=new Date(game.commence_time);
+  const context=detectContext(game, leagueKey, d);
+  const consensus=analyzeConsensus(bookmakers, game.home_team, game.away_team);
+
+  // Totals
+  let totalsData=null;
+  if(totalsGame){
+    const tbm=totalsGame.bookmakers?.[0];
+    const tmkt=tbm?.markets?.find(m=>m.key==='totals');
+    if(tmkt){
+      const over=tmkt.outcomes.find(o=>o.name==='Over');
+      const under=tmkt.outcomes.find(o=>o.name==='Under');
+      if(over&&under){
+        const rO=oddsToProb(over.price),rU=oddsToProb(under.price),tT=rO+rU;
+        totalsData={overOdds:over.price,underOdds:under.price,point:over.point,pOver:rO/tT,pUnder:rU/tT};
+      }
+    }
+  }
+
+  const signals=[];
+  let score=0;
+  const tags=[];
+  let category='standard';
+  let skipReason=null;
+
+  // ── WARNUNGEN DURCH KONTEXT ────────────────────────────────────
+  context.warnings.forEach(w=>{
+    signals.push({icon:w.icon,name:w.name,desc:w.desc,strength:'warn',type:'warn'});
+    score-=w.severity==='high'?25:15;
+    tags.push({label:'⚠️ '+w.name,cls:'tag-warn'});
+  });
+
+  context.boosts.forEach(b=>{
+    signals.push({icon:b.icon,name:b.name,desc:b.desc,strength:'med',type:'boost'});
+    score+=10;
+    tags.push({label:b.icon+' '+b.name,cls:'tag-good'});
+  });
+
+  // ── BUCHMACHER-KONSENS ─────────────────────────────────────────
+  if(consensus){
+    if(consensus.isConsensus){
+      const favName=consensus.pHome>=consensus.pAway?game.home_team:game.away_team;
+      const favProb=Math.max(consensus.pHome,consensus.pAway);
+      signals.push({
+        icon:'🤝',name:`Buchmacher-Konsens (${consensus.bmCount} Buchmacher)`,
+        desc:`Alle ${consensus.bmCount} Buchmacher sind sich einig: ${favName} ist Favorit (${favProb}%). Quote-Spread nur ${consensus.maxSpread} – sehr verlässliches Signal.`,
+        strength:'high',type:'consensus'
+      });
+      score+=30;
+      tags.push({label:`🤝 Konsens (${consensus.bmCount}BM)`,cls:'tag-good'});
+      if(category==='standard') category='consensus';
+    } else if(consensus.isUncertain){
+      signals.push({
+        icon:'❓',name:'Buchmacher uneinig',
+        desc:`Großer Quotenunterschied zwischen Buchmachern (Spread: ${consensus.maxSpread}). Hohe Marktunsi­cherheit – Vorsicht beim Tippen!`,
+        strength:'warn',type:'warn'
+      });
+      score-=15;
+      tags.push({label:'❓ Uneinigkeit',cls:'tag-warn'});
+    }
+
+    // BESTE QUOTE quer durch alle Buchmacher
+    if(consensus.bestHome>homeOut.price*1.05){
+      signals.push({
+        icon:'💰',name:'Bessere Quote verfügbar',
+        desc:`Heimsieg-Quote bis zu ${consensus.bestHome.toFixed(2)} bei anderen Buchmachern (vs. ${homeOut.price.toFixed(2)} hier). Lohnt sich zu vergleichen!`,
+        strength:'med',type:'value'
+      });
+      tags.push({label:'💰 Bessere Quote',cls:'tag-hot'});
+      score+=10;
+    }
+  }
+
+  // ── AUSSENSEITER-SIGNAL ────────────────────────────────────────
+  const outsider=pH<pA?{name:game.home_team,odds:homeOut.price,prob:pH}:{name:game.away_team,odds:awayOut.price,prob:pA};
+  const isUpset=outsider.odds<3.8&&outsider.odds>2.0&&outsider.prob>0.25&&Math.abs(pH-pA)<0.30;
+  if(isUpset){
+    signals.push({
+      icon:'⚡',name:'Außenseiter-Signal',
+      desc:`${outsider.name} gilt als Außenseiter (${outsider.odds.toFixed(2)}) hat aber laut Quoten-Mathematik ${Math.round(outsider.prob*100)}% Chance. Bei ${consensus?.bmCount||1} Buchmachern ähnlich bewertet.`,
+      strength:'med',type:'upset'
+    });
+    score+=22;
+    tags.push({label:'⚡ Außenseiter',cls:'tag-hot'});
+    if(category==='standard') category='upset';
+  }
+
+  // ── ÜBERBEWERTETER FAVORIT ─────────────────────────────────────
+  const favOdds=Math.min(homeOut.price,awayOut.price);
+  if(favOdds<1.50&&drawOut&&pD>0.24){
+    signals.push({
+      icon:'⚠️',name:'Überbewerteter Favorit',
+      desc:`Favorit mit Quote ${favOdds.toFixed(2)} aber Unentschieden hat ${Math.round(pD*100)}% Wahrscheinlichkeit. Wenn du auf den Favoriten wettest: Doppelte Chance absichern!`,
+      strength:'warn',type:'warn'
+    });
+    score-=10;
+    tags.push({label:'⚠️ Risiko-Favorit',cls:'tag-warn'});
+    skipReason=`Sehr niedriger Favorit (${favOdds.toFixed(2)}) aber Unentschieden realistisch (${Math.round(pD*100)}%)`;
+  }
+
+  // ── TORE-ANALYSE ──────────────────────────────────────────────
+  if(totalsData){
+    const diff=Math.abs(totalsData.pOver-totalsData.pUnder);
+    if(diff<0.06){
+      signals.push({
+        icon:'⚽',name:'Ausgeglichenes Tore-Markt',
+        desc:`Über/Unter ${totalsData.point} Tore fast gleich wahrscheinlich (${Math.round(totalsData.pOver*100)}% vs ${Math.round(totalsData.pUnder*100)}%). Offenes Spiel erwartet.`,
+        strength:'med',type:'goals'
+      });
+      score+=15;
+      tags.push({label:'⚽ Offenes Spiel',cls:'tag-neutral'});
+    }
+    if(totalsData.pOver>0.60){
+      signals.push({
+        icon:'🔥',name:'Torflut erwartet',
+        desc:`${Math.round(totalsData.pOver*100)}% Wahrscheinlichkeit für Über ${totalsData.point} Tore. Buchmacher erwarten ein torereiches Spiel.`,
+        strength:'high',type:'goals'
+      });
+      score+=25;
+      tags.push({label:'🔥 Torflut',cls:'tag-hot'});
+    }
+  }
+
+  // ── FAIRE QUOTEN ──────────────────────────────────────────────
+  if(vigPct<=3){
+    signals.push({
+      icon:'📊',name:'Sehr faire Quoten',
+      desc:`Buchmacher-Marge nur ${vigPct}% (Durchschnitt: 6-8%). Die Quoten spiegeln die echte Wahrscheinlichkeit sehr genau wider – verlässlichere Basis.`,
+      strength:'med',type:'quality'
+    });
+    score+=12;
+    tags.push({label:'📊 Faire Marge',cls:'tag-good'});
+  }
+
+  // ── KATEGORIE & GESAMT-SCORE ──────────────────────────────────
+  if(context.warnings.length>0&&score<20) category='skip';
+  else if(score>=45) category='hot';
+  else if(score>=25&&category==='standard') category='good';
+
+  const isHot=category==='hot';
+  const isSkip=category==='skip';
+  const isConsensusGame=signals.some(s=>s.type==='consensus');
+  const isUpsetGame=category==='upset';
+
+  // Empfehlung
+  let tip, tipOdds;
+  if(isSkip){
+    tip='⚠️ Spiel überspringen';
+    tipOdds=Math.min(homeOut.price,awayOut.price);
+  } else if(isUpsetGame){
+    tip=`${outsider.name} gewinnt`;
+    tipOdds=outsider.odds;
+  } else {
+    const best=pH>=pA?{name:game.home_team,odds:homeOut.price}:{name:game.away_team,odds:awayOut.price};
+    tip=best.name+' gewinnt';
+    tipOdds=best.odds;
+    // Check totals
+    if(totalsData&&totalsData.pOver>0.60&&score-25<30){tip=`Über ${totalsData.point} Tore`;tipOdds=totalsData.overOdds;}
+  }
+
+  const scoreBadge=score>=45?`🔥 ${score}`:score>=25?`✅ ${score}`:score>=0?`📊 ${score}`:`⚠️ ${score}`;
+  const scoreCls=score>=45?'score-hot':score>=25?'score-good':score>=0?'score-cool':'score-skip';
+
+  return{
+    id:game.id,match:`${game.home_team} vs ${game.away_team}`,
+    homeName:game.home_team,awayName:game.away_team,
+    leagueLabel,leagueKey,
+    date:d,today:isToday(d),tomorrow:isTomorrow(d),
+    time:`${d.toLocaleDateString('de-DE',{weekday:'short',day:'2-digit',month:'2-digit'})} ${d.toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'})}`,
+    tip,tipOdds,signals,tags,score,scoreBadge,scoreCls,
+    category,isHot,isSkip,isConsensusGame,isUpsetGame,
+    homeOdds:homeOut.price,awayOdds:awayOut.price,drawOdds:drawOut?.price,
+    pH:Math.round(pH*100),pD:Math.round(pD*100),pA:Math.round(pA*100),
+    vigPct,totalsData,consensus,skipReason,
+    bookmaker:bm.title, bmCount:bookmakers.length,
+    contextWarnings:context.warnings,
+  };
+}
+
+async function loadData(){
+  document.getElementById('btn-reload').disabled=true;
+  document.getElementById('content').innerHTML='<div class="loading"><div class="spinner"></div><p id="load-msg">Verbinde mit API…</p><p class="loading-sub" id="load-sub" style="font-size:11px;color:var(--muted);margin-top:6px;"></p></div>';
+  document.getElementById('top-picks-wrap').style.display='none';
+  document.getElementById('warnings-wrap').style.display='none';
+  debugLines=[];document.getElementById('debug-log').innerHTML='';
+  document.getElementById('debug-panel').classList.remove('show');
+  allGames=[];
+  const sel=document.getElementById('filter-league');
+  sel.innerHTML='<option value="all">Alle Ligen</option>';
+  document.getElementById('progress-wrap').classList.add('show');
+  setProgress(0);
+
+  // Load leagues sequentially to avoid proxy rate limiting
+  setStatus('Lade Spiele…');
+  let loaded=0;
+
+  for(const league of LEAGUES){
+    setStatus(`Lade ${league.label}… (${loaded+1}/${LEAGUES.length})`);
+    setProgress(Math.round((loaded/LEAGUES.length)*90));
+
+    const url=`https://api.the-odds-api.com/v4/sports/${league.key}/odds/?apiKey=${ODDS_KEY}&regions=eu&markets=h2h&oddsFormat=decimal`;
+    const data=await fetchURL(url, league.label);
+
+    if(data&&data.length){
+      loaded++;
+      const opt=document.createElement('option');
+      opt.value=league.key;opt.textContent=league.label;sel.appendChild(opt);
+      data.forEach(game=>{
+        const g=analyzeGame(game,league.label,league.key,null);
+        if(g) allGames.push(g);
+      });
+      // Show results as they come in
+      if(allGames.length>0) applyFilters();
+    }
+  }
+
+  allGames.sort((a,b)=>{
+    if(a.today&&!b.today) return -1;
+    if(!a.today&&b.today) return 1;
+    if(a.isSkip&&!b.isSkip) return 1;
+    if(!a.isSkip&&b.isSkip) return -1;
+    return b.score-a.score;
+  });
+
+  setProgress(100);setStatus('');
+  setTimeout(()=>document.getElementById('progress-wrap').classList.remove('show'),500);
+  log(`=== ${allGames.length} Spiele analysiert ===`);
+  document.getElementById('btn-reload').disabled=false;
+  applyFilters();
+}
+
+function applyFilters(){
+  const league=document.getElementById('filter-league').value;
+  const when=document.getElementById('filter-when').value;
+
+  const base=allGames.filter(g=>{
+    if(league!=='all'&&g.leagueKey!==league) return false;
+    if(when==='today'&&!g.today) return false;
+    if(when==='tomorrow'&&!g.tomorrow) return false;
+    if(when==='weekend'){const d=g.date.getDay();if(d!==0&&d!==6)return false;}
+    if(when==='week'){const n=new Date(),e=new Date();e.setDate(e.getDate()+7);if(g.date<n||g.date>e)return false;}
+    return true;
+  });
+
+  const hot=base.filter(g=>g.isHot);
+  const consensus=base.filter(g=>g.isConsensusGame&&!g.isSkip);
+  const upset=base.filter(g=>g.isUpsetGame&&!g.isSkip);
+  const skip=base.filter(g=>g.isSkip);
+
+  document.getElementById('cnt-all').textContent=base.length;
+  document.getElementById('cnt-hot').textContent=hot.length;
+  document.getElementById('cnt-consensus').textContent=consensus.length;
+  document.getElementById('cnt-upset').textContent=upset.length;
+  document.getElementById('cnt-skip').textContent=skip.length;
+  document.getElementById('stat-total').textContent=allGames.length;
+  document.getElementById('stat-hot').textContent=allGames.filter(g=>g.isHot).length;
+  document.getElementById('stat-danger').textContent=allGames.filter(g=>g.isSkip).length;
+  document.getElementById('stat-consensus').textContent=allGames.filter(g=>g.isConsensusGame).length;
+
+  let filtered=base;
+  if(activeFilter==='hot') filtered=hot;
+  else if(activeFilter==='consensus') filtered=consensus;
+  else if(activeFilter==='upset') filtered=upset;
+  else if(activeFilter==='skip') filtered=skip;
+
+  // Always show top 3 picks – hot first, then best scored
+  const topPicksSource = hot.length>=3 ? hot : [...hot, ...base.filter(g=>!g.isSkip&&!hot.includes(g))];
+  renderTopPicks(topPicksSource.slice(0,3));
+  renderWarnings(skip.slice(0,3));
+  renderTips(filtered);
+}
+
+function setFilter(btn,val){
+  document.querySelectorAll('.ftoggle').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');activeFilter=val;applyFilters();
+}
+
+function renderTopPicks(picks){
+  const wrap=document.getElementById('top-picks-wrap');
+  if(!picks.length){wrap.style.display='none';return;}
+  wrap.style.display='block';
+  document.getElementById('top-picks').innerHTML=picks.map((g,i)=>{
+    const todayStr=g.today?' · HEUTE':g.tomorrow?' · MORGEN':'';
+    const topSig=g.signals.find(s=>s.type!=='warn')||g.signals[0];
+    const pickStyle=g.isHot?'hot':'good';
+    const pickLabel=g.isHot?`🔥 Top Pick · Score ${g.score}`:`✅ Empfehlung · Score ${g.score}`;
+    return `<div class="pick-card ${pickStyle}">
+      <div class="pick-num">${i+1}</div>
+      <div class="pick-body">
+        <div class="pick-type ${pickStyle}">${pickLabel}</div>
+        <div class="pick-match">${g.match}</div>
+        <div class="pick-tip" style="color:var(--green)">✅ ${g.tip}</div>
+        <div class="pick-reason">${g.leagueLabel}${todayStr} · ${g.time}<br>${topSig?.icon||''} ${(topSig?.desc||'').slice(0,90)}…</div>
+      </div>
+      <div class="pick-right">
+        <div class="pick-odds">${g.tipOdds.toFixed(2)}</div>
+        <div class="pick-score-label">${g.bmCount} Buchmacher</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderWarnings(picks){
+  const wrap=document.getElementById('warnings-wrap');
+  if(!picks.length){wrap.style.display='none';return;}
+  wrap.style.display='block';
+  document.getElementById('warnings-list').innerHTML=picks.map(g=>{
+    const reason=g.skipReason||g.contextWarnings?.[0]?.desc||'Analyse empfiehlt Vorsicht';
+    return `<div class="warning-banner">
+      <div class="warning-banner-icon">⚠️</div>
+      <div class="warning-banner-text"><strong>${g.match}</strong>${reason}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderTips(tips){
+  const content=document.getElementById('content');
+  if(!allGames.length){content.innerHTML=`<div class="error-box">Keine Daten geladen.</div>`;return;}
+  if(!tips.length){content.innerHTML=`<div class="empty-state"><p>Keine Spiele für diese Filter.</p></div>`;return;}
+
+  const list=document.createElement('div');list.className='tips-list';
+  tips.forEach((g,i)=>{
+    const scoreColor=g.score>=45?'#ffd600':g.score>=25?'#00e676':g.score>=0?'#2a3a2a':'#ff5722';
+    const todayBadge=g.today?'<span class="badge-today">HEUTE</span>':g.tomorrow?'<span class="badge-tomorrow">MORGEN</span>':'';
+    const dangerBadge=g.isSkip?'<span class="badge-danger">⚠️ VORSICHT</span>':'';
+    const tagsHtml=g.tags.map(t=>`<span class="tag ${t.cls}">${t.label}</span>`).join('');
+
+    const oddsRow=`<div class="odds-row">
+      <div class="odds-box${g.pH>=g.pA&&g.pH>=g.pD?' best':''}"><div class="odds-lbl">Heim</div><div class="odds-val">${g.homeOdds.toFixed(2)}</div><div class="odds-prob">${g.pH}%</div></div>
+      ${g.drawOdds?`<div class="odds-box"><div class="odds-lbl">Unentsch.</div><div class="odds-val">${g.drawOdds.toFixed(2)}</div><div class="odds-prob">${g.pD}%</div></div>`:'<div></div>'}
+      <div class="odds-box${g.pA>g.pH&&g.pA>=g.pD?' best':''}"><div class="odds-lbl">Auswärts</div><div class="odds-val">${g.awayOdds.toFixed(2)}</div><div class="odds-prob">${g.pA}%</div></div>
+    </div>`;
+
+    const consensusHtml=g.consensus?.bmDetails?.length>1?`
+      <div class="exp-section">
+        <div class="exp-title">🤝 Buchmacher-Vergleich (${g.consensus.bmCount} Buchmacher)</div>
+        ${g.consensus.bmDetails.map(bm=>`
+          <div class="bm-row">
+            <span class="bm-name">${bm.name}</span>
+            <span class="bm-odds">Heim ${bm.home.toFixed(2)} ${bm.draw?'· X '+bm.draw.toFixed(2):''} · Ausw. ${bm.away.toFixed(2)}</span>
+          </div>`).join('')}
+        <div style="font-size:11px;color:var(--muted);margin-top:6px">Spread: ${g.consensus.maxSpread} · ${g.consensus.isConsensus?'✅ Einigkeit':'❓ Uneinigkeit'}</div>
+      </div>`:'';
+
+    const totalsHtml=g.totalsData?`
+      <div class="exp-section">
+        <div class="exp-title">⚽ Tore Markt</div>
+        <div class="odds-row">
+          <div class="odds-box${g.totalsData.pOver>0.52?' best':''}"><div class="odds-lbl">Über ${g.totalsData.point}</div><div class="odds-val">${g.totalsData.overOdds.toFixed(2)}</div><div class="odds-prob">${Math.round(g.totalsData.pOver*100)}%</div></div>
+          <div></div>
+          <div class="odds-box${g.totalsData.pUnder>=0.52?' best':''}"><div class="odds-lbl">Unter ${g.totalsData.point}</div><div class="odds-val">${g.totalsData.underOdds.toFixed(2)}</div><div class="odds-prob">${Math.round(g.totalsData.pUnder*100)}%</div></div>
+        </div>
+      </div>`:'';
+
+    const signalsHtml=g.signals.map(s=>`
+      <div class="signal-row">
+        <div class="signal-icon">${s.icon}</div>
+        <div class="signal-body"><div class="signal-name">${s.name}</div><div class="signal-desc">${s.desc}</div></div>
+        <div class="signal-str str-${s.strength==='warn'?'w':s.strength==='high'?'h':s.strength==='med'?'m':'l'}">${s.strength==='warn'?'⚠️':s.strength==='high'?'★★★':s.strength==='med'?'★★':'★'}</div>
+      </div>`).join('');
+
+    const card=document.createElement('div');
+    card.className=`tip-card${g.isSkip?' danger':''}`;
+    card.style.animationDelay=(i*0.04)+'s';
+    card.innerHTML=`
+      <div class="score-bar" style="background:linear-gradient(90deg,${scoreColor} ${Math.max(0,g.score)}%,var(--dark4) ${Math.max(0,g.score)}%)"></div>
+      <div class="tip-card-header" onclick="this.parentElement.classList.toggle('expanded')">
+        <div class="tip-meta">
+          <div class="tip-match">${g.match}</div>
+          <div class="tip-sub"><span class="tip-league">${g.leagueLabel}</span>${todayBadge}${dangerBadge}<span class="tip-time">🕐 ${g.time}</span></div>
+          <div class="tags-row">${tagsHtml}</div>
+        </div>
+        <div class="tip-right">
+          <span class="score-badge ${g.scoreCls}">${g.scoreBadge}</span>
+          <span class="tip-odds-main">${g.tipOdds.toFixed(2)}</span>
+          <span style="font-size:10px;color:var(--muted)">${g.bmCount} BM</span>
+        </div>
+      </div>
+      <div class="tip-expand">
+        <div class="exp-section">
+          <div class="exp-title">🔍 Analyse-Signale</div>
+          ${signalsHtml}
+        </div>
+        <div class="exp-section">
+          <div class="exp-title">📊 Quoten</div>
+          ${oddsRow}
+        </div>
+        ${consensusHtml}
+        ${totalsHtml}
+        <div class="rec-box">
+          <div>
+            <div class="rec-tip${g.isSkip?' skip':''}">${g.isSkip?'⚠️ Besser überspringen':'✅ '+g.tip}</div>
+            <div class="rec-sub">Score: ${g.score}/100 · Marge: ${g.vigPct}% · ${g.bmCount} Buchmacher</div>
+          </div>
+          <div class="rec-odds">${g.tipOdds.toFixed(2)}</div>
+        </div>
+      </div>`;
+    list.appendChild(card);
+  });
+  content.innerHTML='';content.appendChild(list);
+}
+
+loadData();
+</script>
+</body>
+</html>
